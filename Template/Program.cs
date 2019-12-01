@@ -11,9 +11,10 @@ namespace Template
             string year;
             string day;
             string puzzle;
-            string input;
+            string inputLocation;
             string output = "";
             var watch = new System.Diagnostics.Stopwatch();
+            string testInputLocation = "./inputs/test.txt";
 
             Console.WriteLine("Loading input...");
 
@@ -25,7 +26,7 @@ namespace Template
                 day = DateTime.Now.Day.ToString();
                 if (args.Length == 1)
                     puzzle = args[0];
-                else 
+                else
                     puzzle = "1";
             }
             else
@@ -37,23 +38,20 @@ namespace Template
                 else
                     puzzle = "1";
             }
-            input = GetInputString(year, day);
+            //input = GetInputString(year, day);
+            inputLocation = GetInputLocation(year, day);
             //Console.WriteLine("debug :: " + input);
 
             Console.Write("Running puzzle " + puzzle + "...  ");
 
             watch.Start();
 
-            if (year.Equals("2019") && day.Equals("27"))
-            {
-                output = Aoc_2019_27(input);
-            }
-            else if (year.Equals("2019") && day.Equals("28"))
+            if (year.Equals("2019") && day.Equals("1"))
             {
                 if (puzzle.Equals("1"))
-                    output = Day_2019_28.firstPuzzle(input);
+                    output = Day_2019_1.firstPuzzle(inputLocation);
                 else if (puzzle.Equals("2"))
-                    output = Day_2019_28.secondPuzzle(input);
+                    output = Day_2019_1.secondPuzzle(inputLocation);
             }
             else
             {
@@ -84,12 +82,20 @@ namespace Template
             }
             return s;
         }
-        #endregion
-
-        #region ADVENT OF CODE DAILIES
-        private static string Aoc_2019_27(string input)
+        private static string GetInputLocation(string year, string day)
         {
-            return "fooBar";
+            string location = "./inputs/" + year + "_" + day + ".txt";
+
+            if (File.Exists(@location))
+            {
+                Console.WriteLine("Got input for " + year + "/" + day + "!");
+                return location;
+            }
+            else
+            {
+                Console.WriteLine("Missing input for " + year + "/" + day + "!");
+                return null;
+            }
         }
         #endregion
     }
