@@ -11,6 +11,7 @@ namespace Template
             string year;
             string day;
             string puzzle;
+            string input;
             string inputLocation;
             string output = "";
             var watch = new System.Diagnostics.Stopwatch();
@@ -38,7 +39,7 @@ namespace Template
                 else
                     puzzle = "1";
             }
-            //input = GetInputString(year, day);
+            input = GetInputString(year, day);
             inputLocation = GetInputLocation(year, day);
             //Console.WriteLine("debug :: " + input);
 
@@ -52,6 +53,13 @@ namespace Template
                     output = Day_2019_1.firstPuzzle(inputLocation);
                 else if (puzzle.Equals("2"))
                     output = Day_2019_1.secondPuzzle(inputLocation);
+            }
+            else if (year.Equals("2019") && day.Equals("2"))
+            {
+                if (puzzle.Equals("1"))
+                    output = Day_2019_2.firstPuzzle(input);
+                else if (puzzle.Equals("2"))
+                    output = Day_2019_2.secondPuzzle(input);
             }
             else
             {
@@ -79,6 +87,22 @@ namespace Template
             {
                 s = null;
                 Console.WriteLine("Missing input for " + year + "/" + day + "!");
+            }
+            return s;
+        }
+        private static string GetTestInputString()
+        {
+            string s;
+            string location = "./inputs/test.txt";
+            try
+            {
+                s = File.ReadAllText(@location, Encoding.UTF8);
+                Console.WriteLine("Got test input!");
+            }
+            catch (FileNotFoundException)
+            {
+                s = null;
+                Console.WriteLine("Missing test input!");
             }
             return s;
         }
