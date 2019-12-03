@@ -66,7 +66,7 @@ namespace Template
                 if (puzzle.Equals("1"))
                     output = Day_2019_3.firstPuzzle(inputLocation);
                 else if (puzzle.Equals("2"))
-                    output = Day_2019_3.secondPuzzle(testInputLocation);
+                    output = Day_2019_3.secondPuzzle(inputLocation);
             }
             else
             {
