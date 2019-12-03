@@ -50,7 +50,7 @@ namespace Template
                     stepDistance = intersection[2];
             }
             //Output the nearest
-            return stepDistance.ToString();
+            return stepDistance.ToString(); //19242 for real and 610 for test input
         }
         private static List<int[]> mapLine(string line)
         {
