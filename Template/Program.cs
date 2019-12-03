@@ -61,6 +61,13 @@ namespace Template
                 else if (puzzle.Equals("2"))
                     output = Day_2019_2.secondPuzzle(input);
             }
+            else if (year.Equals("2019") && day.Equals("3"))
+            {
+                if (puzzle.Equals("1"))
+                    output = Day_2019_3.firstPuzzle(inputLocation);
+                else if (puzzle.Equals("2"))
+                    output = Day_2019_3.secondPuzzle(inputLocation);
+            }
             else
             {
                 output = year + "/" + day + " not implemented!";
