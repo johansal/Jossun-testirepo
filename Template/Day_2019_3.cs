@@ -22,21 +22,36 @@ namespace Template
             Console.WriteLine(intersections.Count.ToString());
             //Calculate manhattan distances from O
             List<int> distFromIntersects = new List<int>();
-            foreach (int[] intersection in intersections) {
+            foreach (int[] intersection in intersections)
+            {
                 distFromIntersects.Add(manhattanDistance(intersection));
             }
             distFromIntersects.Sort();
             //Output the nearest
             return distFromIntersects.Count > 0 ? distFromIntersects[0].ToString() : distFromIntersects.Count.ToString();
         }
-
         public static string secondPuzzle(string location)
         {
-            //Fuel counter-upper
-            string[] fuels = File.ReadAllLines(@location, Encoding.UTF8);
-            return "not implemented";
-        }
+            string[] lines = File.ReadAllLines(@location, Encoding.UTF8);
 
+            //Map all lines
+            List<int[]> line1 = mapLine(lines[0]);
+            Console.WriteLine(line1.Count.ToString());
+            List<int[]> line2 = mapLine(lines[1]);
+            Console.WriteLine(line2.Count.ToString());
+            //Find all intersections
+            List<int[]> intersections = intersect(line1, line2);
+            Console.WriteLine(intersections.Count.ToString());
+            //Find smalles step distances from O
+            int stepDistance = 0;
+            foreach (int[] intersection in intersections)
+            {
+                if (stepDistance == 0 || intersection[2] < stepDistance)
+                    stepDistance = intersection[2];
+            }
+            //Output the nearest
+            return stepDistance.ToString();
+        }
         private static List<int[]> mapLine(string line)
         {
             int[] currentPosition = { 0, 0 };
@@ -90,19 +105,30 @@ namespace Template
             }
             return points;
         }
-        private static List<int[]> intersect(List<int[]> A, List<int[]> B) {
+        private static List<int[]> intersect(List<int[]> A, List<int[]> B)
+        {
             List<int[]> c = new List<int[]>();
-            foreach(int[] a in A) {
-                foreach(int[] b in B) {
+            int i = 0;
+            foreach (int[] a in A)
+            {
+                int j = 0;
+                foreach (int[] b in B)
+                {
                     //Console.WriteLine("(" + a[0] + "," + a[1] + ") <>" + "(" + b[0] + "," + b[1] + ")");
-                    if(a[0] == b[0] && a[1] == b[1])
+                    if (a[0] == b[0] && a[1] == b[1])
                         if (a[0] != 0 || a[1] != 0)
-                            c.Add(a);
+                        {
+                            int[] x = { a[0], a[1], i + j };//add sum of steps (index of a + b)
+                            c.Add(x);
+                        }
+                    j++;
                 }
+                i++;
             }
             return c;
         }
-        private static int manhattanDistance(int[] point) {
+        private static int manhattanDistance(int[] point)
+        {
             if (point[0] < 0)
                 point[0] *= -1;
             if (point[1] < 0)
