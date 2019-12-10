@@ -41,12 +41,12 @@ namespace Template
         public static string secondPuzzle(string input)
         {
             IEnumerable<IEnumerable<int>> phases = GetPermutations(Enumerable.Range(5, 5), 5);
-            int maxThrusterSignal = 0;
+            long maxThrusterSignal = 0;
             foreach (IEnumerable<int> phase in phases)
             {
 
-                int amplifierOutput = 0;
-                int[] intcode = input.Split(',').Select(Int32.Parse).ToArray();
+                long amplifierOutput = 0;
+                long[] intcode = input.Split(',').Select(long.Parse).ToArray();
                 List<IntComputer> amplifiers = new List<IntComputer>();
                 amplifiers.Add(new IntComputer(intcode));
                 amplifiers.Add(new IntComputer(intcode));
