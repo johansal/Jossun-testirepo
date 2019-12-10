@@ -168,7 +168,7 @@ namespace Template
 
             if (File.Exists(@location))
             {
-                Console.WriteLine("Got input for " + year + "/" + day + "!");
+                Console.WriteLine("Got input location for " + year + "/" + day + "!");
                 return location;
             }
             else
