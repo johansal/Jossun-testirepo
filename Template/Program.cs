@@ -39,8 +39,8 @@ namespace Template
                 else
                     puzzle = "1";
             }
-            input = GetInputString(year, day);
             inputLocation = GetInputLocation(year, day);
+            input = GetInputString(year, day);
             //Console.WriteLine("debug :: " + input);
 
             Console.Write("Running puzzle " + puzzle + "...  ");
@@ -119,7 +119,7 @@ namespace Template
             }
             else
             {
-                output = year + "/" + day + " not implemented!";
+                output = year + "/" + day + " not implemented, try " + testInputLocation;
             }
 
             watch.Stop();
@@ -168,7 +168,7 @@ namespace Template
 
             if (File.Exists(@location))
             {
-                Console.WriteLine("Got input location for " + year + "/" + day + "!");
+                Console.WriteLine("Got location for " + year + "/" + day + "!");
                 return location;
             }
             else

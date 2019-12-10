@@ -165,7 +165,7 @@ namespace Template
                 }
                 catch (System.IndexOutOfRangeException)
                 {
-                    Console.WriteLine(string.Join(' ', digits) + "Index out of bounds at " + position + ", double memory!");
+                    Console.WriteLine("[" + string.Join(' ', digits) + "] Index out of bounds at " + position + ", double memory!");
                     if (position == 477)
                         throw new Exception("STOP");
                     long[] additionalMemory = new long[memory.Length * 2];
