@@ -15,39 +15,40 @@ namespace Template
             int i = 499;
             int j = 499;
             int compass = 2;
-            List<Tuple<int,int>> painted = new List<Tuple<int,int>>();
-            int[,] hull = new int[1000,1000];
-            ic.inputs.Add(hull[i,j]);
+            List<Tuple<int, int>> painted = new List<Tuple<int, int>>();
+            int[,] hull = new int[1000, 1000];
+            ic.inputs.Add(hull[i, j]);
             ic.compute();
             while (ic.isWaiting)
             {
                 //Paint
                 //elem1: 0 = blck, 1 = wht, elem2: 0 = left, 1 = right
-                if(hull[i,j] != (int) ic.outputs.ElementAt(0))
+                if (hull[i, j] != (int)ic.outputs.ElementAt(0))
                 {
-                    hull[i,j] = (int) ic.outputs.ElementAt(0);
-                    painted.Add(new Tuple<int, int>(i,j));
+                    hull[i, j] = (int)ic.outputs.ElementAt(0);
+                    painted.Add(new Tuple<int, int>(i, j));
                 }
                 ic.outputs.RemoveAt(0);
                 //Rotate
-                compass = rotateCompass(compass, (int) ic.outputs.ElementAt(0));
+                compass = rotateCompass(compass, (int)ic.outputs.ElementAt(0));
                 ic.outputs.RemoveAt(0);
                 //Move
-                if(compass == 1)
-                    i--;
-                else if(compass == 2)
+                if (compass == 1)
                     j--;
-                else if(compass == 3)
-                    i++;
-                else if(compass == 4)
+                else if (compass == 2)
+                    i--;
+                else if (compass == 3)
                     j++;
-                ic.inputs.Add(hull[i,j]);
+                else if (compass == 4)
+                    i++;
+                ic.inputs.Add(hull[i, j]);
                 ic.compute();
             }
             var result = painted.GroupBy(key => key, item => 1)
-                               .Select(group => new { 
-                                   group.Key, 
-                                   Duplicates = group.Count() 
+                               .Select(group => new
+                               {
+                                   group.Key,
+                                   Duplicates = group.Count()
                                }).ToList();
 
             return result.Count.ToString();
@@ -67,62 +68,73 @@ namespace Template
         }
 
 
-        public static string secondPuzzle(string location)
+        public static string secondPuzzle(string input)
         {
-            //Find asteroid with max line of sight to other asteroids
-            string[] lines = File.ReadAllLines(@location, Encoding.UTF8);
-            List<Tuple<int, int>> asteroids = new List<Tuple<int, int>>();
-
-            for (int i = 0; i < lines.Length; i++)
+            long[] intcode = input.Split(',').Select(long.Parse).ToArray();
+            IntComputer ic = new IntComputer(intcode);
+            int i = 499;
+            int j = 499;
+            int compass = 2;
+            List<Tuple<int, int>> painted = new List<Tuple<int, int>>();
+            int[,] hull = new int[1000, 1000];
+            hull[i, j] = 1;
+            ic.inputs.Add(hull[i, j]);
+            ic.compute();
+            while (ic.isWaiting)
             {
-                for (int j = 0; j < lines[i].Length; j++)
+                //Paint
+                //elem1: 0 = blck, 1 = wht, elem2: 0 = left, 1 = right
+                if (hull[i, j] != (int)ic.outputs.ElementAt(0))
                 {
-                    if (lines[i][j] == '#')
-                    {
-                        asteroids.Add(new Tuple<int, int>(i, j));
-                    }
+                    hull[i, j] = (int)ic.outputs.ElementAt(0);
+                    painted.Add(new Tuple<int, int>(i, j));
                 }
+                ic.outputs.RemoveAt(0);
+                //Rotate
+                compass = rotateCompass(compass, (int)ic.outputs.ElementAt(0));
+                ic.outputs.RemoveAt(0);
+                //Move
+                if (compass == 1)
+                    j--;
+                else if (compass == 2)
+                    i--;
+                else if (compass == 3)
+                    j++;
+                else if (compass == 4)
+                    i++;
+                ic.inputs.Add(hull[i, j]);
+                ic.compute();
             }
-            Tuple<int, int> winner = new Tuple<int, int>(0, 0);
-            List<Tuple<int, int>> winnerCanSee = new List<Tuple<int, int>>();
-
-            foreach (var asteroid in asteroids)
+            List<string> lines = new List<string>();
+            //Print hull
+            int minFirstOne = 1000;
+            int maxLastOne = 0;
+            for (i = 0; i < hull.GetLength(0); i++)
             {
-                List<Tuple<int, int>> canSee = new List<Tuple<int, int>>();
-                foreach (var asteroid2 in asteroids)
+                string line = "";
+                int firstOne = 1000;
+                int lastOne = 0;
+                for (j = 0; j < hull.GetLength(1); j++)
                 {
-                    if (!asteroid.Equals(asteroid2))
-                    {
-                        if (canSee.Count == 0)
-                            canSee.Add(asteroid2);
-                        else
-                        {
-                            bool sameAtan = false;
-                            foreach (var seen in canSee)
-                            {
-                                if (Math.Atan2(asteroid2.Item2 - asteroid.Item2, asteroid2.Item1 - asteroid.Item1) == Math.Atan2(seen.Item2 - asteroid.Item2, seen.Item1 - asteroid.Item1))
-                                {
-                                    sameAtan = true;
-                                    break;
-                                }
-                            }
-                            if (!sameAtan)
-                            {
-                                canSee.Add(asteroid2);
-                            }
-                        }
-                    }
+                    if(hull[i,j] == 1 && j < firstOne )
+                        firstOne = j;
+                    if(hull[i,j] == 1 && j > lastOne)
+                        lastOne = j;
+                    line += hull[i, j] == 0 ? " " : "#";
                 }
-                if (winnerCanSee.Count == 0 || canSee.Count > winnerCanSee.Count)
-                {
-                    winner = asteroid;
-                    winnerCanSee = canSee;
-                }
+                if(firstOne != 1000)
+                    lines.Add(line);
+                if(firstOne < minFirstOne)
+                    minFirstOne = firstOne;
+                if(lastOne > maxLastOne)
+                    maxLastOne = lastOne;
             }
-
-            var sortedAsteroids = winnerCanSee.OrderBy(i => Math.Atan2(i.Item2 - winner.Item2, i.Item1 - winner.Item1)).ToList();
-
-            return (sortedAsteroids.ElementAt(sortedAsteroids.Count - 200).Item2 * 100 + sortedAsteroids.ElementAt(sortedAsteroids.Count - 200).Item1).ToString();
+            Console.WriteLine("min first one: " + minFirstOne + ", max last one: " + maxLastOne + " lines " + lines.Count);
+            List<string> trimmedLines = new List<string>();
+            foreach(var line in lines) {
+                trimmedLines.Add(line.Substring(0, maxLastOne + 4).Substring(minFirstOne - 3));
+            }
+            return string.Join('\n',trimmedLines);
         }
     }
 }
