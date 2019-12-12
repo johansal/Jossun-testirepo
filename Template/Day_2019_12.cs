@@ -46,16 +46,78 @@ namespace Template
             int totalEnergy = 0;
             //Console.WriteLine();
             foreach (var moon in moons)
-                {
-                    //Console.WriteLine("x:" + moon.x + " y:" + moon.y + " z:" + moon.z + " vx:" + moon.vx + " vy:" + moon.vy + " vz:" + moon.vz);
-                    totalEnergy += moon.getPotentialEnergy() * moon.getKineticEnergy();
-                }
+            {
+                //Console.WriteLine("x:" + moon.x + " y:" + moon.y + " z:" + moon.z + " vx:" + moon.vx + " vy:" + moon.vy + " vz:" + moon.vz);
+                totalEnergy += moon.getPotentialEnergy() * moon.getKineticEnergy();
+            }
             return totalEnergy.ToString();
         }
 
         public static string secondPuzzle(string location)
         {
-            return "-";
+            List<Moon> moons = new List<Moon>();
+            List<Moon> ogMoons = new List<Moon>();
+            string[] lines = File.ReadAllLines(@location, Encoding.UTF8);
+            foreach (var line in lines)
+            {
+                int x = 0;
+                int y = 0;
+                int z = 0;
+                string[] splittedLine = line.Split(',');
+                x = Int32.Parse(Regex.Match(splittedLine[0], @"-?\d+").Value);
+                y = Int32.Parse(Regex.Match(splittedLine[1], @"-?\d+").Value);
+                z = Int32.Parse(Regex.Match(splittedLine[2], @"-?\d+").Value);
+                Moon m = new Moon(x, y, z);
+                Moon og = new Moon(x, y, z);
+                moons.Add(m);
+                ogMoons.Add(og);
+            }
+            long clx = 0;
+            long cly = 0;
+            long clz = 0;
+            long stepCounter = 1;
+            while (clx == 0 || cly == 0 || clz == 0)
+            {
+                stepCounter++;
+                //update velocity by appling gravity ()
+                applyGravity(moons.ElementAt(0), moons.ElementAt(1));
+                applyGravity(moons.ElementAt(0), moons.ElementAt(2));
+                applyGravity(moons.ElementAt(0), moons.ElementAt(3));
+
+                applyGravity(moons.ElementAt(1), moons.ElementAt(2));
+                applyGravity(moons.ElementAt(1), moons.ElementAt(3));
+
+                applyGravity(moons.ElementAt(2), moons.ElementAt(3));
+                //update position
+                for (int i = 0; i < moons.Count; i++)
+                {
+                    updatePosition(moons[i]);
+                }
+                //find cycle lengths
+                if (clx == 0 && moons[0].x == ogMoons[0].x && moons[1].x == ogMoons[1].x && moons[2].x == ogMoons[2].x && moons[3].x == ogMoons[3].x)
+                    clx = stepCounter;
+                if (cly == 0 && moons[0].y == ogMoons[0].y && moons[1].y == ogMoons[1].y && moons[2].y == ogMoons[2].y && moons[3].y == ogMoons[3].y)
+                    cly = stepCounter;
+                if (clz == 0 && moons[0].z == ogMoons[0].z && moons[1].z == ogMoons[1].z && moons[2].z == ogMoons[2].z && moons[3].z == ogMoons[3].z)
+                    clz = stepCounter;
+            }
+
+            long lcm_3 = LCM(new long[]{clx,cly,clz});
+
+            return clx + " " + cly + " " + clz + " lcm = " + lcm_3;
+        }
+        //LCM, lcm & GDC: https://stackoverflow.com/questions/147515/least-common-multiple-for-3-or-more-numbers/29717490#29717490
+        static long LCM(long[] numbers)
+        {
+            return numbers.Aggregate(lcm);
+        }
+        static long lcm(long a, long b)
+        {
+            return Math.Abs(a * b) / GCD(a, b);
+        }
+        static long GCD(long a, long b)
+        {
+            return b == 0 ? a : GCD(b, a % b);
         }
         public static void applyGravity(Moon a, Moon b)
         {
