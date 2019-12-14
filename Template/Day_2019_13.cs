@@ -12,48 +12,111 @@ namespace Template
         {
             long[] intcode = input.Split(',').Select(long.Parse).ToArray();
             IntComputer ic = new IntComputer(intcode);
-            int i = 499;
-            int j = 499;
-            int compass = 2;
-            List<Tuple<int, int>> painted = new List<Tuple<int, int>>();
-            int[,] hull = new int[1000, 1000];
-            ic.inputs.Add(hull[i, j]);
+
+            int blocks = 0;
+
+            ic.compute();
+            Console.WriteLine(ic.isWaiting.ToString());
+            for (int i = 2; i < ic.outputs.Count; i += 3)
+            {
+                if (ic.outputs[i] == 2)
+                    blocks++;
+            }
+
+            return blocks.ToString();
+        }
+
+        public static string secondPuzzle(string input)
+        {
+            long[] intcode = input.Split(',').Select(long.Parse).ToArray();
+            IntComputer ic = new IntComputer(intcode);
+
+            long score = 0;
+            long blocks = 363;
+            Tuple<long, long> paddle = new Tuple<long, long>(0, 0);
+            Tuple<long, long> oldbBall = new Tuple<long, long>(0, 0);
+            Tuple<long, long> ball = new Tuple<long, long>(0, 0);
+
             ic.compute();
             while (ic.isWaiting)
             {
-                //Paint
-                //elem1: 0 = blck, 1 = wht, elem2: 0 = left, 1 = right
-                if (hull[i, j] != (int)ic.outputs.ElementAt(0))
+                blocks = 0;
+                Console.WriteLine(ic.outputs.Count);
+                while (ic.outputs.Count >= 3)
                 {
-                    hull[i, j] = (int)ic.outputs.ElementAt(0);
-                    painted.Add(new Tuple<int, int>(i, j));
+                    if (ic.outputs[2] == 4)
+                    {
+                        oldbBall = ball;
+                        ball = new Tuple<long, long>(ic.outputs[0], ic.outputs[1]);
+                    }
+                    else if (ic.outputs[2] == 3)
+                    {
+                        paddle = new Tuple<long, long>(ic.outputs[0], ic.outputs[1]);
+                    }
+                    else if (ic.outputs[2] == 2)
+                    {
+                        blocks++;
+                    }
+                    else if (ic.outputs[0] == -1 && ic.outputs[1] == 0)
+                    {
+                        score = ic.outputs[2];
+                    }
+                    ic.outputs.RemoveRange(0, 3);
                 }
-                ic.outputs.RemoveAt(0);
-                //Rotate
-                compass = rotateCompass(compass, (int)ic.outputs.ElementAt(0));
-                ic.outputs.RemoveAt(0);
-                //Move
-                if (compass == 1)
-                    j--;
-                else if (compass == 2)
-                    i--;
-                else if (compass == 3)
-                    j++;
-                else if (compass == 4)
-                    i++;
-                ic.inputs.Add(hull[i, j]);
-                ic.compute();
+                Console.WriteLine(blocks + " blocks left!");
+                //Move paddle according to ball movement
+                if (oldbBall.Item1 < ball.Item1)
+                {
+                    //ball is moving right
+                    if (paddle.Item1 > ball.Item1 + 1)
+                    {
+                        ic.inputs.Add(-1);
+                    }
+                    else if (paddle.Item1 < ball.Item1 + 1)
+                    {
+                        ic.inputs.Add(1);
+                    }
+                    else
+                    {
+                        ic.inputs.Add(0);
+                    }
+                }
+                else if (oldbBall.Item1 > ball.Item1)
+                {
+                    //ball is moving right
+                    if (paddle.Item1 > ball.Item1 - 1)
+                    {
+                        ic.inputs.Add(-1);
+                    }
+                    else if (paddle.Item1 < ball.Item1 - 1)
+                    {
+                        ic.inputs.Add(1);
+                    }
+                    else
+                    {
+                        ic.inputs.Add(0);
+                    }
+                }
+                else
+                {
+                    //ball is moving straight up or down
+                    if (paddle.Item1 > ball.Item1)
+                    {
+                        ic.inputs.Add(-1);
+                    }
+                    else if (paddle.Item1 < ball.Item1)
+                    {
+                        ic.inputs.Add(1);
+                    }
+                    else
+                    {
+                        ic.inputs.Add(0);
+                    }
+                }
             }
-            var result = painted.GroupBy(key => key, item => 1)
-                               .Select(group => new
-                               {
-                                   group.Key,
-                                   Duplicates = group.Count()
-                               }).ToList();
 
-            return result.Count.ToString();
+            return score.ToString();
         }
-
         public static int rotateCompass(int compass, int direction)
         {
             if (direction == 0)
@@ -65,76 +128,6 @@ namespace Template
             else if (compass > 4)
                 compass = 1;
             return compass;
-        }
-
-
-        public static string secondPuzzle(string input)
-        {
-            long[] intcode = input.Split(',').Select(long.Parse).ToArray();
-            IntComputer ic = new IntComputer(intcode);
-            int i = 499;
-            int j = 499;
-            int compass = 2;
-            List<Tuple<int, int>> painted = new List<Tuple<int, int>>();
-            int[,] hull = new int[1000, 1000];
-            hull[i, j] = 1;
-            ic.inputs.Add(hull[i, j]);
-            ic.compute();
-            while (ic.isWaiting)
-            {
-                //Paint
-                //elem1: 0 = blck, 1 = wht, elem2: 0 = left, 1 = right
-                if (hull[i, j] != (int)ic.outputs.ElementAt(0))
-                {
-                    hull[i, j] = (int)ic.outputs.ElementAt(0);
-                    painted.Add(new Tuple<int, int>(i, j));
-                }
-                ic.outputs.RemoveAt(0);
-                //Rotate
-                compass = rotateCompass(compass, (int)ic.outputs.ElementAt(0));
-                ic.outputs.RemoveAt(0);
-                //Move
-                if (compass == 1)
-                    j--;
-                else if (compass == 2)
-                    i--;
-                else if (compass == 3)
-                    j++;
-                else if (compass == 4)
-                    i++;
-                ic.inputs.Add(hull[i, j]);
-                ic.compute();
-            }
-            List<string> lines = new List<string>();
-            //Print hull
-            int minFirstOne = 1000;
-            int maxLastOne = 0;
-            for (i = 0; i < hull.GetLength(0); i++)
-            {
-                string line = "";
-                int firstOne = 1000;
-                int lastOne = 0;
-                for (j = 0; j < hull.GetLength(1); j++)
-                {
-                    if(hull[i,j] == 1 && j < firstOne )
-                        firstOne = j;
-                    if(hull[i,j] == 1 && j > lastOne)
-                        lastOne = j;
-                    line += hull[i, j] == 0 ? " " : "#";
-                }
-                if(firstOne != 1000)
-                    lines.Add(line);
-                if(firstOne < minFirstOne)
-                    minFirstOne = firstOne;
-                if(lastOne > maxLastOne)
-                    maxLastOne = lastOne;
-            }
-            Console.WriteLine("min first one: " + minFirstOne + ", max last one: " + maxLastOne + " lines " + lines.Count);
-            List<string> trimmedLines = new List<string>();
-            foreach(var line in lines) {
-                trimmedLines.Add(line.Substring(0, maxLastOne + 4).Substring(minFirstOne - 3));
-            }
-            return string.Join('\n',trimmedLines);
         }
     }
 }
