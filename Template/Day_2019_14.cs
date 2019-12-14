@@ -27,32 +27,58 @@ namespace Template
             Reaction fuel = reactions.First(r => r.product.name.Equals("FUEL"));
             List<Molecule> needed = fuel.factors;
             List<Molecule> extra = new List<Molecule>();
-            bool allFactorsAreOre = false;
-            Console.Write("\n");
-            while (!allFactorsAreOre)
+            //Console.Write("\n");
+            bool hasOnlyOre = false;
+            while (!hasOnlyOre)
             {
-                allFactorsAreOre = true;
-                foreach (var fa in needed)
+                hasOnlyOre = true;
+                /*foreach (var fa in needed)
                 {
                     Console.Write(fa.quantity + " " + fa.name + ", ");
                 }
-                Console.Write("\n");
+                Console.Write("\n");*/
                 List<Molecule> newNeededMolecules = new List<Molecule>();
-                foreach (Molecule f in needed)
+                foreach (Molecule n in needed)
                 {
-                    if (!f.name.Equals("ORE"))
+                    //Check if we have extra
+                    int extraInd = extra.FindIndex(m => m.name.Equals(n.name));
+                    if(extraInd >= 0) {
+                        if (extra[extraInd].quantity >= n.quantity) {
+                            extra[extraInd].quantity -= n.quantity;
+                            continue;
+                        }
+                        else {
+                            n.quantity -= extra[extraInd].quantity;
+                            extra[extraInd].quantity = 0;
+
+                        }
+                    } 
+
+
+                    if (!n.name.Equals("ORE"))
                     {
-                        Reaction newFactor = reactions.First(r => r.product.name.Equals(f.name));
-                        long tempQty = newFactor.product.quantity;
-                        foreach (var mol in newFactor.factors)
+                        Reaction reactionForNeededMolecule = reactions.First(r => r.product.name.Equals(n.name));
+                        long producedQty = reactionForNeededMolecule.product.quantity;
+                        long productionRepeat = (long)Math.Ceiling((decimal)n.quantity / (decimal)producedQty);
+                        foreach (var mol in reactionForNeededMolecule.factors)
                         {
-                            Console.Write(mol.quantity + "*(" + f.quantity + "/" + tempQty.ToString());
-                            if (tempQty > f.quantity)
+                            //Console.Write(mol.quantity + "*(" + n.quantity + "/" + producedQty.ToString());
+                            if (producedQty * productionRepeat > n.quantity)
                             {
-                                tempQty = f.quantity; //extra not used
+                                int i = extra.FindIndex(m => m.name.Equals(n.name));
+                                if (i >= 0)
+                                {
+                                    extra[i].quantity = producedQty * productionRepeat - n.quantity + extra[i].quantity; 
+                                }
+                                else
+                                {
+                                    Molecule extraM = new Molecule(n.name, producedQty * productionRepeat - n.quantity);
+                                    extra.Add(extraM);
+                                }
+
                             }
-                            Molecule newMol = new Molecule(mol.name, (long)Math.Ceiling((decimal)f.quantity / (decimal)tempQty) * mol.quantity);
-                            Console.WriteLine(")=" + newMol.quantity);
+                            Molecule newMol = new Molecule(mol.name, productionRepeat * mol.quantity);
+                            //Console.WriteLine(")=" + newMol.quantity);
                             bool added = false;
                             foreach (var m in newNeededMolecules)
                             {
@@ -65,20 +91,18 @@ namespace Template
                             if (!added)
                                 newNeededMolecules.Add(newMol);
                         }
-                        allFactorsAreOre = false;
+                        hasOnlyOre = false;
                     }
                     else
                     {
-                        newNeededMolecules.Add(f);
+                        newNeededMolecules.Add(n);
                     }
                 }
-
                 needed = newNeededMolecules;
-
             }
+
             return needed.Sum(molecule => molecule.quantity).ToString();
         }
-
         public static string secondPuzzle(string location)
         {
             return location;
