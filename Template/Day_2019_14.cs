@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Template
 {
@@ -11,137 +12,133 @@ namespace Template
         public static string firstPuzzle(string location)
         {
             string[] lines = File.ReadAllLines(@location, Encoding.UTF8);
-            List<Reaction> reactions = new List<Reaction>();
-            foreach (var line in lines)
-            {
-                var splittedL = line.Split(" => ");
-                Molecule product = new Molecule(splittedL[1]);
-                List<Molecule> f = new List<Molecule>();
-                foreach (var ssL in splittedL[0].Split(", "))
-                {
-                    f.Add(new Molecule(ssL));
-                }
-                reactions.Add(new Reaction(f, product));
-            }
-
-            Reaction fuel = reactions.First(r => r.product.name.Equals("FUEL"));
-            List<Molecule> needed = fuel.factors;
-            List<Molecule> extra = new List<Molecule>();
-            //Console.Write("\n");
-            bool hasOnlyOre = false;
-            while (!hasOnlyOre)
-            {
-                hasOnlyOre = true;
-                /*foreach (var fa in needed)
-                {
-                    Console.Write(fa.quantity + " " + fa.name + ", ");
-                }
-                Console.Write("\n");*/
-                List<Molecule> newNeededMolecules = new List<Molecule>();
-                foreach (Molecule n in needed)
-                {
-                    //Check if we have extra
-                    int extraInd = extra.FindIndex(m => m.name.Equals(n.name));
-                    if(extraInd >= 0) {
-                        if (extra[extraInd].quantity >= n.quantity) {
-                            extra[extraInd].quantity -= n.quantity;
-                            continue;
-                        }
-                        else {
-                            n.quantity -= extra[extraInd].quantity;
-                            extra[extraInd].quantity = 0;
-
-                        }
-                    } 
-
-
-                    if (!n.name.Equals("ORE"))
-                    {
-                        Reaction reactionForNeededMolecule = reactions.First(r => r.product.name.Equals(n.name));
-                        long producedQty = reactionForNeededMolecule.product.quantity;
-                        long productionRepeat = (long)Math.Ceiling((decimal)n.quantity / (decimal)producedQty);
-                        foreach (var mol in reactionForNeededMolecule.factors)
-                        {
-                            //Console.Write(mol.quantity + "*(" + n.quantity + "/" + producedQty.ToString());
-                            if (producedQty * productionRepeat > n.quantity)
-                            {
-                                int i = extra.FindIndex(m => m.name.Equals(n.name));
-                                if (i >= 0)
-                                {
-                                    extra[i].quantity = producedQty * productionRepeat - n.quantity + extra[i].quantity; 
-                                }
-                                else
-                                {
-                                    Molecule extraM = new Molecule(n.name, producedQty * productionRepeat - n.quantity);
-                                    extra.Add(extraM);
-                                }
-
-                            }
-                            Molecule newMol = new Molecule(mol.name, productionRepeat * mol.quantity);
-                            //Console.WriteLine(")=" + newMol.quantity);
-                            bool added = false;
-                            foreach (var m in newNeededMolecules)
-                            {
-                                if (m.name.Equals(newMol.name))
-                                {
-                                    m.quantity += newMol.quantity;
-                                    added = true;
-                                }
-                            }
-                            if (!added)
-                                newNeededMolecules.Add(newMol);
-                        }
-                        hasOnlyOre = false;
-                    }
-                    else
-                    {
-                        newNeededMolecules.Add(n);
-                    }
-                }
-                needed = newNeededMolecules;
-            }
-
-            return needed.Sum(molecule => molecule.quantity).ToString();
+            Refinery refinery = new Refinery(lines);
+            refinery.ProduceMolecule(new Molecule() { Name = "FUEL", Amount = 1 });
+            return refinery.NeededOre.ToString();
         }
         public static string secondPuzzle(string location)
         {
-            return location;
+            string[] lines = File.ReadAllLines(@location, Encoding.UTF8);
+            Refinery refinery = new Refinery(lines);
+            long maxFuel = 0;
+            int factor = 10000;
+            Dictionary<string, long> oldExtra = null;
+            long oldNeededOre = 0;
+
+            while (factor >= 1)
+            {
+                while (refinery.NeededOre < 1000000000000)
+                {
+                    oldExtra = new Dictionary<string, long>(refinery.Extra);
+                    oldNeededOre = refinery.NeededOre;
+                    refinery.ProduceMolecule(new Molecule() { Name = "FUEL", Amount = factor });
+                    maxFuel += factor; 
+                }
+                //produced too much, reset old state and donwgrade factor / 10
+                if(factor >= 1)
+                {
+                    refinery.Extra = new Dictionary<string, long>(oldExtra);
+                    refinery.NeededOre = oldNeededOre;
+                    maxFuel -= factor;
+                    factor /= 10;
+                }
+            }
+            return maxFuel.ToString();
+        }
+
+    }
+
+    public class Refinery
+    {
+        public Dictionary<string, Reaction> Reactions = new Dictionary<string, Reaction>();
+        public Dictionary<string, long> Extra = new Dictionary<string, long>();
+        public long NeededOre = 0;
+
+        public Refinery(string[] reactionArr)
+        {
+            Regex r = new Regex(@"(\d+ [A-Z]+)");
+            foreach (var line in reactionArr)
+            {
+                List<Molecule> preProductions = new List<Molecule>();
+                var match = r.Matches(line);
+                var output = match.Last();
+
+                var split = output.Value.Split(' ');
+                int amount = int.Parse(split[0]);
+                string name = split[1];
+
+                var outputMolecule = new Molecule() { Name = name, Amount = amount };
+
+                for (int i = 0; i < match.Count - 1; i++)
+                {
+                    split = match[i].Value.Split(' ');
+                    amount = int.Parse(split[0]);
+                    name = split[1];
+
+                    preProductions.Add(new Molecule() { Name = name, Amount = amount });
+                }
+
+                Reactions.Add(outputMolecule.Name, new Reaction() { Output = outputMolecule, PreProductions = preProductions });
+            }
+        }
+
+        public void ProduceMolecule(Molecule request)
+        {
+            if (request.Name.Equals("ORE"))
+            {
+                NeededOre += request.Amount;
+                return;
+            }
+
+            if (Extra.ContainsKey(request.Name))
+            {
+                if (Extra[request.Name] >= request.Amount)
+                {
+                    Extra[request.Name] -= request.Amount;
+                    return;
+                }
+                else
+                {
+                    request.Amount -= Extra[request.Name];
+                    Extra[request.Name] = 0;
+                }
+            }
+            var reaction = Reactions[request.Name];
+
+            var reactionRepeat = (int)Math.Ceiling((double)request.Amount / (double)reaction.Output.Amount);
+
+            foreach (var p in reaction.PreProductions)
+            {
+                ProduceMolecule(new Molecule() { Amount = p.Amount * reactionRepeat, Name = p.Name });
+            }
+
+            /* if we produced more than needed, adjust our running surplus */
+            if (reaction.Output.Amount * reactionRepeat > request.Amount)
+            {
+                if (Extra.ContainsKey(reaction.Output.Name))
+                {
+                    Extra[reaction.Output.Name] += (reaction.Output.Amount * reactionRepeat) - request.Amount;
+                }
+                else
+                {
+                    Extra.Add(reaction.Output.Name, (reaction.Output.Amount * reactionRepeat) - request.Amount);
+                }
+            }
         }
     }
 
     public class Molecule
     {
-        public string name;
-        public long quantity;
-        public Molecule()
+        public string Name;
+        public long Amount;
+        public override string ToString()
         {
-            this.name = "";
-            this.quantity = 0;
-        }
-        public Molecule(string n, long q)
-        {
-            this.name = n;
-            this.quantity = q;
-        }
-        public Molecule(string s)
-        {
-            this.name = s.Split(" ")[1];
-            this.quantity = long.Parse(s.Split(" ")[0]);
+            return $"{Amount} {Name}";
         }
     }
     public class Reaction
     {
-        public List<Molecule> factors;
-        public Molecule product;
-        public Reaction()
-        {
-            this.factors = new List<Molecule>();
-            this.product = new Molecule();
-        }
-        public Reaction(List<Molecule> f, Molecule p)
-        {
-            this.factors = f;
-            this.product = p;
-        }
+        public List<Molecule> PreProductions = new List<Molecule>();
+        public Molecule Output;
     }
 }
