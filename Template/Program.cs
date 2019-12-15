@@ -148,9 +148,9 @@ namespace Template
             else if (year.Equals("2019") && day.Equals("15"))
             {
                 if (puzzle.Equals("1"))
-                    output = Day_2019_15.firstPuzzle(input);
+                    output = new Day_2019_15().firstPuzzle(input);
                 else if (puzzle.Equals("2"))
-                    output = Day_2019_15.secondPuzzle(input);
+                    output = new Day_2019_15().secondPuzzle(input);
             }
             else
             {

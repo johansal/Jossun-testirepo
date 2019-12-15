@@ -8,100 +8,211 @@ namespace Template
 {
     public class Day_2019_15
     {
-        public static string firstPuzzle(string input)
+
+        Dictionary<Point, long> SeenPoints = new Dictionary<Point, long>();
+        long[,] Board = null;
+        long[,] FloodLvls = null;
+        bool[,] Seen = null;
+
+        Point StartPoint = null;
+        Point TargetPoint = null;
+
+        IntComputer ic = null;
+
+        public string firstPuzzle(string input)
+        {
+
+            long[] intcode = input.Split(',').Select(long.Parse).ToArray();
+            ic = new IntComputer(intcode);
+
+
+
+            Point og = new Point { X = 0, Y = 0 };
+            StartPoint = og;
+
+            CheckAdjacentPoints(og);
+
+            var minX = SeenPoints.Keys.Min(k => k.X);
+            var maxX = SeenPoints.Keys.Max(k => k.X);
+            var minY = SeenPoints.Keys.Min(k => k.Y);
+            var maxY = SeenPoints.Keys.Max(k => k.Y);
+
+            var offsetX = Math.Abs(minX);
+            var offsetY = Math.Abs(minY);
+
+            var sizeX = maxX + offsetX;
+            var sizeY = maxY + offsetY;
+
+            StartPoint = new Point { X = StartPoint.X + offsetX, Y = StartPoint.Y + offsetY };
+            TargetPoint = new Point { X = TargetPoint.X + offsetX, Y = TargetPoint.Y + offsetY };
+
+            Board = new long[sizeY + 1, sizeX + 1];
+            FloodLvls = new long[sizeY + 1, sizeX + 1];
+            Seen = new bool[sizeY + 1, sizeX + 1];
+
+            foreach (var p in SeenPoints)
+            {
+                Board[p.Key.Y + offsetY, p.Key.X + offsetX] = p.Value;
+            }
+
+            FloodFill(StartPoint);
+            return FloodLvls[TargetPoint.Y, TargetPoint.X].ToString();
+
+        }
+
+        public string secondPuzzle(string input)
         {
             long[] intcode = input.Split(',').Select(long.Parse).ToArray();
-            IntComputer ic = new IntComputer(intcode);
+            ic = new IntComputer(intcode);
 
-            int[] repairDroidPosition = { 39, 49 };
-            int[,] board = new int[80, 100];
-            board[repairDroidPosition[0], repairDroidPosition[1]] = 8;
-            int directionToMove = 1;
-            ic.inputs.Add(directionToMove);
+
+
+            Point og = new Point { X = 0, Y = 0 };
+            StartPoint = og;
+
+            CheckAdjacentPoints(og);
+
+            var minX = SeenPoints.Keys.Min(k => k.X);
+            var maxX = SeenPoints.Keys.Max(k => k.X);
+            var minY = SeenPoints.Keys.Min(k => k.Y);
+            var maxY = SeenPoints.Keys.Max(k => k.Y);
+
+            var offsetX = Math.Abs(minX);
+            var offsetY = Math.Abs(minY);
+
+            var sizeX = maxX + offsetX;
+            var sizeY = maxY + offsetY;
+
+            StartPoint = new Point { X = StartPoint.X + offsetX, Y = StartPoint.Y + offsetY };
+            TargetPoint = new Point { X = TargetPoint.X + offsetX, Y = TargetPoint.Y + offsetY };
+
+            Board = new long[sizeY + 1, sizeX + 1];
+            FloodLvls = new long[sizeY + 1, sizeX + 1];
+            Seen = new bool[sizeY + 1, sizeX + 1];
+
+            foreach (var p in SeenPoints)
+            {
+                Board[p.Key.Y + offsetY, p.Key.X + offsetX] = p.Value;
+            }
+
+            FloodFill(TargetPoint);
+            long timeStepsToFlood = FloodLvls.Cast<long>().Max();
+            return timeStepsToFlood.ToString();
+        }
+        void CheckAdjacentPoints(Point p)
+        {
+            //Try different directions, map the seen point and step back
+            var newPoint = new Point { X = p.X, Y = p.Y - 1 };
+            if (SeenPoints.ContainsKey(newPoint) == false)
+            {
+                var valueAtTargetPoint = MoveInDirection(1);
+                SeenPoints.Add(newPoint, valueAtTargetPoint);
+
+                if (valueAtTargetPoint != 0)
+                {
+                    CheckAdjacentPoints(newPoint);
+                    MoveInDirection(2);
+                    if (valueAtTargetPoint == 2)
+                    {
+                        SeenPoints[newPoint] = 1;
+                        TargetPoint = new Point { X = newPoint.X, Y = newPoint.Y };
+                    }
+                }
+            }
+            newPoint = new Point { X = p.X + 1, Y = p.Y };
+            if (SeenPoints.ContainsKey(newPoint) == false)
+            {
+                var moveResult = MoveInDirection(4);
+                SeenPoints.Add(newPoint, moveResult);
+
+                if (moveResult != 0)
+                {
+                    CheckAdjacentPoints(newPoint);
+                    MoveInDirection(3);
+                    if (moveResult == 2)
+                    {
+                        SeenPoints[newPoint] = 1;
+                        TargetPoint = new Point { X = newPoint.X, Y = newPoint.Y };
+                    }
+                }
+            }
+            newPoint = new Point { X = p.X, Y = p.Y + 1 };
+            if (SeenPoints.ContainsKey(newPoint) == false)
+            {
+                var moveResult = MoveInDirection(2);
+                SeenPoints.Add(newPoint, moveResult);
+
+                if (moveResult != 0)
+                {
+                    CheckAdjacentPoints(newPoint);
+                    MoveInDirection(1);
+                    if (moveResult == 2)
+                    {
+                        SeenPoints[newPoint] = 1;
+                        TargetPoint = new Point { X = newPoint.X, Y = newPoint.Y };
+                    }
+                }
+            }
+            newPoint = new Point { X = p.X - 1, Y = p.Y };
+            if (SeenPoints.ContainsKey(newPoint) == false)
+            {
+                var moveResult = MoveInDirection(3);
+                SeenPoints.Add(newPoint, moveResult);
+
+                if (moveResult != 0)
+                {
+                    CheckAdjacentPoints(newPoint);
+                    MoveInDirection(4);
+                    if (moveResult == 2)
+                    {
+                        SeenPoints[newPoint] = 1;
+                        TargetPoint = new Point { X = newPoint.X, Y = newPoint.Y };
+                    }
+                }
+            }
+
+        }
+        long MoveInDirection(int inputDirection)
+        {
+            ic.inputs.Add(inputDirection);
             ic.compute();
-            while (ic.isWaiting)
-            {
-                if (ic.outputs.Count != 1)
-                {
-                    Console.WriteLine("output: " + ic.outputs[0] + ", " + ic.outputs[1]);
-                    throw new Exception("Less or more than one output, " + ic.outputs.Count);
-                }
-                else
-                {
-                    if (ic.outputs[0] == 0)
-                    {
-                        int[] wallPosition = updatePosition(repairDroidPosition, directionToMove);
-                        board[wallPosition[0], wallPosition[1]] = 4;
-                        //sanity check
-                        if (wallPosition[0] == repairDroidPosition[0] && wallPosition[1] == repairDroidPosition[1])
-                            throw new Exception("Wall updater is updating the droid as well");
-                        //update direction
-                        directionToMove = directionToMove == 1 ? 4 : directionToMove == 4 ? 2 : directionToMove == 2 ? 3 : directionToMove == 3 ? 1 : 0;
-                    }
-                    else if (ic.outputs[0] == 1)
-                    {
-                        board[repairDroidPosition[0], repairDroidPosition[1]] = board[repairDroidPosition[0], repairDroidPosition[1]] == 2 ? 2 : 1;
-                        repairDroidPosition = updatePosition(repairDroidPosition, directionToMove);
-                        board[repairDroidPosition[0], repairDroidPosition[1]] = 8;
-                    }
-                    if (ic.outputs[0] == 2)
-                    {
-                        board[repairDroidPosition[0], repairDroidPosition[1]] = 1;
-                        repairDroidPosition = updatePosition(repairDroidPosition, directionToMove);
-                        board[repairDroidPosition[0], repairDroidPosition[1]] = 2;
-
-                    }
-                }
-                ic.outputs.RemoveAt(0);
-
-                Console.Write("\n");
-                Console.SetCursorPosition(0, 5);
-                for (int i = 0; i < board.GetLength(0); i++)
-                {
-                    for (int j = 0; j < board.GetLength(1); j++)
-                    {
-                        Console.Write(board[i, j]);
-                    }
-                    Console.Write("\n");
-                }
-                while (!Int32.TryParse(Console.ReadLine(), out directionToMove))
-                {
-                    Console.WriteLine("Wrong input!");
-                }
-                ic.inputs.Add(directionToMove);
-                ic.compute();
-            }
-            return repairDroidPosition[0] + "," + repairDroidPosition[1];
+            long ret = ic.outputs[0];
+            ic.outputs.RemoveAt(0);
+            return ret;
         }
-        public static int[] updatePosition(int[] oldPosition, int direction)
+        void FloodFill(Point startPoint)
         {
-            int[] newPosition = { oldPosition[0], oldPosition[1] };
-            if (direction == 1)
-            {
-                newPosition[0]--;
-            }
-            else if (direction == 2)
-            {
-                newPosition[0]++;
-            }
-            else if (direction == 3)
-            {
-                newPosition[1]--;
-            }
-            else if (direction == 4)
-            {
-                newPosition[1]++;
-            }
-            else
-            {
-                throw new Exception("Invalid direction " + direction);
-            }
-            return newPosition;
-        }
+            Stack<Point> pointQueue = new Stack<Point>();
 
-        public static string secondPuzzle(string input)
-        {
-            return input;
+            pointQueue.Push(startPoint);
+
+            while (pointQueue.Count > 0)
+            {
+                var p = pointQueue.Pop();
+
+                Point[] possiblePoints = new Point[]
+                {
+                    new Point{X=p.X, Y=p.Y - 1},
+                    new Point{X=p.X, Y=p.Y + 1},
+                    new Point{X=p.X + 1, Y=p.Y},
+                    new Point{X=p.X - 1, Y=p.Y}
+                };
+
+                foreach (var point in possiblePoints)
+                {
+                    if (Board[point.Y, point.X] != 0)
+                    {
+                        if (Seen[point.Y, point.X] == false)
+                        {
+                            FloodLvls[point.Y, point.X] = FloodLvls[p.Y, p.X] + 1;
+                            pointQueue.Push(point);
+                        }
+                    }
+                }
+
+                Seen[p.Y, p.X] = true;
+            }
+
         }
     }
 }
