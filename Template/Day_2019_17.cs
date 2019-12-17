@@ -50,11 +50,22 @@ namespace Template
         public static string secondPuzzle(string input)
         {
             long[] intcode = input.Split(',').Select(long.Parse).ToArray();
+            intcode[0] = 2;
             IntComputer ic = new IntComputer(intcode);
 
-            long score = 0;
+            string mainMove = "A,B,C\n";
+            string moveA = "L,6,R,12,L,4,L,6,R,6,L,6,R,12,R,6,L,6,R,12,L,6,L,10,L,10,R,6,L,6,R,12,L,4,L,6,R,6,L,6,R,12,L,6,L,10,L,10,R,6,L,6,R,12,L,4,L,6,R,6,L,6,R,12,L,6,L,10,L,10,R,6";
+            string moveB = "";
+            string moveC = "";
+            foreach (char c in mainMove+moveA+moveB+moveC+"n\n") {
+                ic.inputs.Add((long)c);
+            }
 
-            return score.ToString();
+            ic.compute();
+            
+            long spaceDust = ic.outputs.Last();
+
+            return spaceDust.ToString();
         }
     }
 }
