@@ -53,11 +53,12 @@ namespace Template
             intcode[0] = 2;
             IntComputer ic = new IntComputer(intcode);
 
-            string mainMove = "A,B,C\n";
-            string moveA = "L,6,R,12,L,4,L,6,R,6,L,6,R,12,R,6,L,6,R,12,L,6,L,10,L,10,R,6,L,6,R,12,L,4,L,6,R,6,L,6,R,12,L,6,L,10,L,10,R,6,L,6,R,12,L,4,L,6,R,6,L,6,R,12,L,6,L,10,L,10,R,6";
-            string moveB = "";
-            string moveC = "";
-            foreach (char c in mainMove+moveA+moveB+moveC+"n\n") {
+            char[] moves = {'A',',','C',',','C',',','B',',','A',',','C',',','B',',','A',',','C',',','B','\n', //main
+                'L',',','6',',','R',',','1','2',',','L',',','4',',','L',',','6','\n', //a
+                'L',',','6',',','L',',','1','0',',','L',',','1','0',',','R',',','6','\n',//b
+                'R',',','6',',','L',',','6',',','R',',','1','2','\n',//c
+                'n', '\n'};//live video?
+            foreach (char c in moves) {
                 ic.inputs.Add((long)c);
             }
 
