@@ -152,6 +152,13 @@ namespace Template
                 else if (puzzle.Equals("2"))
                     output = new Day_2019_15().secondPuzzle(input);
             }
+            else if (year.Equals("2019") && day.Equals("16"))
+            {
+                if (puzzle.Equals("1"))
+                    output = Day_2019_16.firstPuzzle(input);
+                else if (puzzle.Equals("2"))
+                    output = Day_2019_16.secondPuzzle(input);
+            }
             else if (year.Equals("2019") && day.Equals("17"))
             {
                 if (puzzle.Equals("1"))
