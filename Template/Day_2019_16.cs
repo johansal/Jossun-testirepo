@@ -14,7 +14,7 @@ namespace Template
             //Console.WriteLine("After phase 0: " + tmp);
             for (int i = 1; i <= 100; i++)
             {
-                tmp = fftPhase(tmp);
+                tmp = fftPhase(tmp,1);
                 //Console.WriteLine("After phase " + i + ": " + tmp.Substring(0, 8));
             }
             return tmp.Substring(0, 8);
@@ -22,27 +22,28 @@ namespace Template
 
         public static string secondPuzzle(string input)
         {
-            string tmp = Enumerable.Repeat(input, 10000).ToString();
+
+            string tmp = input;
+            Console.WriteLine(tmp.Length);
             int messageOffSet = int.Parse(tmp.Substring(0,7));
             for (int i = 1; i <= 100; i++)
             {
-                tmp = fftPhase(tmp);
+                tmp = fftPhase(tmp,10000);
             }
             return tmp.Substring(messageOffSet, 8);
         }
 
-        public static string fftPhase(string input)
+        public static string fftPhase(string input, int m)
         {
             int[] pattern = { 0, 1, 0, -1 };
             string output = "";
-
-            for (long i = 1; i <= input.Length; i++)
+            //use m to repeat input string
+            for (int i = 1; i <= input.Length; i++)
             {
                 int signal = 0;
                 int offset = 0;
-                for (long j = 1; j <= input.Length; j++)
+                for (int j = 1; j <= input.Length; j++)
                 {
-                    //patternOffSet = j == 1 ? 1 : 0;
                     if (j % i == 0)
                         offset = offset == 3 ? 0 : offset + 1;
                     //Console.Write(offset + " (" + pattern[offset] + ") ");
