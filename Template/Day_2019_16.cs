@@ -10,27 +10,45 @@ namespace Template
     {
         public static string firstPuzzle(string input)
         {
-            string tmp = input;
-            //Console.WriteLine("After phase 0: " + tmp);
             for (int i = 1; i <= 100; i++)
             {
-                tmp = fftPhase(tmp);
-                //Console.WriteLine("After phase " + i + ": " + tmp.Substring(0, 8));
+                input = fftPhase(input);
             }
-            return tmp.Substring(0, 8);
+            return input.Substring(0, 8);
         }
 
         public static string secondPuzzle(string input)
         {
 
-            string tmp = input;
+            /*string tmp = input;
             Console.WriteLine(tmp.Length);
             int messageOffSet = int.Parse(tmp.Substring(0, 7));
             for (int i = 1; i <= 100; i++)
             {
                 tmp = fftPhase(tmp);
             }
-            return tmp.Substring(messageOffSet, 8);
+            return tmp.Substring(messageOffSet, 8);*/
+            int messageOffSet = int.Parse(input.Substring(0, 7));
+            List<int> tmp = new List<int>();
+            for (int i = 0; i < 10000; i++)
+            {
+                foreach (char c in input)
+                {
+                    tmp.Add((int)c);
+                }
+            }
+            Console.WriteLine(tmp.Count);
+            for (int i = 1; i <= 100; i++)
+            {
+                tmp = fft2(tmp);
+                Console.WriteLine("Phase " + i + " completed..");
+            }
+            string output = "";
+            for (int i = 0; i < 8; i++) { 
+                output += tmp.ElementAt(messageOffSet+i);
+            }
+
+            return output;
         }
 
         public static string fftPhase(string input)
@@ -42,8 +60,10 @@ namespace Template
             {
                 int signal = 0;
                 int offset = 0;
+
                 for (int j = 1; j <= input.Length; j++)
                 {
+
                     if (j % i == 0)
                         offset = offset == 3 ? 0 : offset + 1;
                     //Console.Write(offset + " (" + pattern[offset] + ") ");
@@ -55,6 +75,35 @@ namespace Template
                 //Console.Write("=" + signal + " (" + (signal % 10).ToString() + ")\n");
                 output += (signal % 10).ToString();
             }
+
+            return output;
+        }
+
+        public static List<int> fft2(List<int> input)
+        {
+            int[] pattern = { 0, 1, 0, -1 };
+            List<int> output = new List<int>();
+
+            for (int i = 1; i <= input.Count; i++)
+            {
+                int signal = 0;
+                int offset = 0;
+
+                for (int j = 1; j <= input.Count; j++)
+                {
+
+                    if (j % i == 0)
+                        offset = offset == 3 ? 0 : offset + 1;
+                    //Console.Write(offset + " (" + pattern[offset] + ") ");
+                    //Console.Write(input[j-1].ToString() + "*" + pattern[offset] + " + ");
+                    signal += input.ElementAt(j - 1) * pattern[offset];
+                }
+                signal = Math.Abs(signal);
+                //Console.Write("\n");
+                //Console.Write("=" + signal + " (" + (signal % 10).ToString() + ")\n");
+                output.Add(signal % 10);
+            }
+
             return output;
         }
 
