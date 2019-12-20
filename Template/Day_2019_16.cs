@@ -19,33 +19,25 @@ namespace Template
 
         public static string secondPuzzle(string input)
         {
-
-            /*string tmp = input;
-            Console.WriteLine(tmp.Length);
-            int messageOffSet = int.Parse(tmp.Substring(0, 7));
-            for (int i = 1; i <= 100; i++)
-            {
-                tmp = fftPhase(tmp);
-            }
-            return tmp.Substring(messageOffSet, 8);*/
-            int messageOffSet = int.Parse(input.Substring(0, 7));
+            int messageOffSet = 0;//int.Parse(input.Substring(0, 7));
             List<int> tmp = new List<int>();
             for (int i = 0; i < 10000; i++)
             {
                 foreach (char c in input)
                 {
-                    tmp.Add((int)c);
+                    tmp.Add((int)Char.GetNumericValue(c));
                 }
             }
             Console.WriteLine(tmp.Count);
             for (int i = 1; i <= 100; i++)
             {
                 tmp = fft2(tmp);
-                Console.WriteLine("Phase " + i + " completed..");
+                //Console.WriteLine("Phase " + i + " completed..");
             }
             string output = "";
-            for (int i = 0; i < 8; i++) { 
-                output += tmp.ElementAt(messageOffSet+i);
+            for (int i = 0; i < 8; i++)
+            {
+                output += tmp.ElementAt(messageOffSet + i);
             }
 
             return output;
@@ -87,20 +79,22 @@ namespace Template
             for (int i = 1; i <= input.Count; i++)
             {
                 int signal = 0;
-                int offset = 0;
-
-                for (int j = 1; j <= input.Count; j++)
+                int j = 0;
+                while (j < input.Count - 1)
                 {
-
-                    if (j % i == 0)
-                        offset = offset == 3 ? 0 : offset + 1;
-                    //Console.Write(offset + " (" + pattern[offset] + ") ");
-                    //Console.Write(input[j-1].ToString() + "*" + pattern[offset] + " + ");
-                    signal += input.ElementAt(j - 1) * pattern[offset];
+                    //partial sums
+                    if (j == 0)
+                    {
+                        signal += input.Skip(j + i - 1).Take(i).Sum() - input.Skip(3 * i + j - 1).Take(i).Sum();
+                        j += i * 4 - 1;
+                    }
+                    else
+                    {
+                        signal += input.Skip(j + i).Take(i).Sum() - input.Skip(3 * i + j).Take(i).Sum();
+                        j += i * 4;
+                    }
                 }
                 signal = Math.Abs(signal);
-                //Console.Write("\n");
-                //Console.Write("=" + signal + " (" + (signal % 10).ToString() + ")\n");
                 output.Add(signal % 10);
             }
 
