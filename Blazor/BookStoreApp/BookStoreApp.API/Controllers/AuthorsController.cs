@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using BookStoreApp.API.Data;
 using BookStoreApp.API.Models.Author;
 using AutoMapper;
+using BookStoreApp.API.Static;
 
 namespace BookStoreApp.API.Controllers
 {
@@ -18,19 +19,30 @@ namespace BookStoreApp.API.Controllers
     {
         private readonly BookStoreDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ILogger<AuthorsController> logger;
 
-        public AuthorsController(BookStoreDbContext context, IMapper mapper)
+        public AuthorsController(BookStoreDbContext context, IMapper mapper, ILogger<AuthorsController> logger)
         {
             _context = context;
             _mapper = mapper;
+            this.logger = logger;
         }
 
         // GET: api/Authors
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AuthorReadOnlyDto>>> GetAuthors()
         {
-            var authors = _mapper.Map<IEnumerable<AuthorReadOnlyDto>>(await _context.Authors.ToListAsync());
-            return Ok(authors);
+            try 
+            { 
+                var authors = await _context.Authors.ToListAsync();
+                var authorDtos = _mapper.Map<IEnumerable<AuthorReadOnlyDto>> (authors);
+                return Ok(authorDtos);
+            } 
+            catch (Exception ex) 
+            {
+                logger.LogError(ex, $"Error performing GET in {nameof(GetAuthors)}");
+                return StatusCode(500, Messages.Error500Message);
+            }
         }
 
         // GET: api/Authors/5
@@ -41,6 +53,8 @@ namespace BookStoreApp.API.Controllers
 
             if (author == null)
             {
+                string message = $"Record not found {nameof(GetAuthor)} - ID: {id}";
+                logger.LogWarning(message);
                 return NotFound();
             }
 
@@ -52,14 +66,18 @@ namespace BookStoreApp.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAuthor(int id, AuthorUpdateDto authorDto)
         {
-            
-            var author = _mapper.Map<Author>(authorDto);
-
-            if (id != author.Id)
+            if (id != authorDto.Id)
             {
                 return BadRequest();
             }
 
+            var author = await _context.Authors.FindAsync(id);
+
+            if(author == null) { 
+                return NotFound();
+            }
+
+            _mapper.Map(authorDto, author);
             _context.Entry(author).State = EntityState.Modified;
 
             try
