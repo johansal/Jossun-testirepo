@@ -84,7 +84,7 @@ namespace BookStoreApp.API.Controllers
                     UserId = user.Id
                 };
 
-                return Accepted(response);
+                return response;
             }
             catch(Exception ex)
             {
