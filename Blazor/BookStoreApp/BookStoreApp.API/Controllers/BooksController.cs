@@ -21,12 +21,13 @@ namespace BookStoreApp.API.Controllers
     {
         private readonly BookStoreDbContext _context;
         private readonly IMapper mapper;
-        
+        private readonly IWebHostEnvironment webHostEnvironment;
 
-        public BooksController(BookStoreDbContext context, IMapper mapper)
+        public BooksController(BookStoreDbContext context, IMapper mapper, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             this.mapper = mapper;
+            this.webHostEnvironment = webHostEnvironment;
         }
 
         // GET: api/Books
@@ -68,6 +69,7 @@ namespace BookStoreApp.API.Controllers
             {
                 return BadRequest();
             }
+
             var book = await _context.Books.FindAsync(id);
             
             if(book == null)
@@ -75,7 +77,22 @@ namespace BookStoreApp.API.Controllers
                 return NotFound();
             }
             
+            if(string.IsNullOrEmpty(bookDto.ImageData) == false)
+            {
+                //create new image
+                bookDto.Image = CreateFile(bookDto.ImageData, bookDto.OriginalImageName);
+
+                //delete old image if it exists
+                var imgName = Path.GetFileName(book.Image);
+                var path = $"{webHostEnvironment.WebRootPath}\\bookcoverimages\\{imgName}";
+                if (System.IO.File.Exists(path))
+                {
+                    System.IO.File.Delete(path);
+                }
+            }
+
             mapper.Map(bookDto, book);
+
             _context.Entry(book).State = EntityState.Modified;
 
             try
@@ -104,6 +121,10 @@ namespace BookStoreApp.API.Controllers
         public async Task<ActionResult<BookCreateDto>> PostBook(BookCreateDto bookDto)
         {
             var book = mapper.Map<Book>(bookDto);
+            if (string.IsNullOrEmpty(bookDto.ImageData) == false)
+            { 
+                book.Image = CreateFile(bookDto.ImageData, bookDto.OriginalImageName);
+            }
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
 
@@ -125,6 +146,22 @@ namespace BookStoreApp.API.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+        private string CreateFile(string imageBase64, string imageName)
+        {
+            var url = HttpContext.Request.Host.Value;
+            var ext = Path.GetExtension(imageName);
+            var fileName = $"{Guid.NewGuid()}{ext}";
+          
+            var path = $"{webHostEnvironment.WebRootPath}\\bookcoverimages\\{fileName}";
+
+            byte[] image = Convert.FromBase64String(imageBase64);
+
+            var fileStream = System.IO.File.Create(path);
+            fileStream.Write(image, 0, image.Length);
+            fileStream.Close();
+
+            return $"https://{url}/bookcoverimages/{fileName}";
         }
 
         private async Task<bool> BookExists(int id)
