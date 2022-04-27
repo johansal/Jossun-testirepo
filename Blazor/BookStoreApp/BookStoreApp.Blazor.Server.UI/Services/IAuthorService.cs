@@ -1,10 +1,12 @@
-﻿using BookStoreApp.Blazor.Server.UI.Services.Base;
+﻿using BookStoreApp.Blazor.Server.UI.Models;
+using BookStoreApp.Blazor.Server.UI.Services.Base;
 
 namespace BookStoreApp.Blazor.Server.UI.Services
 {
     public interface IAuthorService
     {
         //this response pattern limits our ability to have generic service class to extend from
+        Task<Response<AuthorReadOnlyDtoVirtualizeResponse>> Get(QueryParameters queryParameters);
         Task<Response<List<AuthorReadOnlyDto>>> Get();
         Task<Response<AuthorDetailsDto>> Get(int id);
         Task<Response<AuthorUpdateDto>> GetForUpdate(int id);

@@ -1,4 +1,7 @@
-﻿using BookStoreApp.API.Data;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using BookStoreApp.API.Data;
+using BookStoreApp.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStoreApp.API.Repositories
@@ -6,10 +9,12 @@ namespace BookStoreApp.API.Repositories
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         private readonly BookStoreDbContext context;
+        private readonly IMapper mapper;
 
-        public GenericRepository(BookStoreDbContext context)
+        public GenericRepository(BookStoreDbContext context, IMapper mapper)
         {
             this.context = context;
+            this.mapper = mapper;
         }
         public async Task<T> AddAsync(T entity)
         {
@@ -34,6 +39,20 @@ namespace BookStoreApp.API.Repositories
         public async Task<List<T>> GetAllAsync()
         {
             return await context.Set<T>().ToListAsync();
+        }
+
+        //TResult eliminates nees for separate book and author implementations, other duplicate methods could be reduced this way also
+        public async Task<VirtualizeResponse<TResult>> GetAllAsync<TResult>(QueryParameters queryParam)
+            where TResult : class
+        {
+            var totalSize = await context.Set<T>().CountAsync();
+            var items = await context.Set<T>()
+                .Skip(queryParam.StartIndex)
+                .Take(queryParam.PageSize)
+                .ProjectTo<TResult>(mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return new VirtualizeResponse<TResult> { Items = items, TotalSize = totalSize };
         }
 
         public async Task<T> GetAsync(int? id)

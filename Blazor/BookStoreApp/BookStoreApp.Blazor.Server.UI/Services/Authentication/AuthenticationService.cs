@@ -5,30 +5,44 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace BookStoreApp.Blazor.Server.UI.Services.Authentication
 {
-    public class AuthenticationService : IAuthenticationService
+    public class AuthenticationService : BaseHttpService, IAuthenticationService
     {
         private readonly IClient httpClient;
         private readonly ILocalStorageService localStorage;
         private readonly AuthenticationStateProvider authenticationStateProvider;
 
         public AuthenticationService(IClient httpClient, ILocalStorageService localStorage, AuthenticationStateProvider authenticationStateProvider)
+            : base(httpClient, localStorage)
         {
             this.httpClient = httpClient;
             this.localStorage = localStorage;
             this.authenticationStateProvider = authenticationStateProvider;
         }
 
-        public async Task<bool> AuthenticateAsync(LoginUserDto loginModel)
+        public async Task<Response<AuthResponse>> AuthenticateAsync(LoginUserDto loginModel)
         {
-            var response = await httpClient.LoginAsync(loginModel);
+            Response<AuthResponse> response;
+            try
+            {
+                var result = await httpClient.LoginAsync(loginModel);
+                response = new Response<AuthResponse>
+                {
+                    Data = result,
+                    Success = true
+                };
+                //store token
+                await localStorage.SetItemAsync("accessToken", result.Token);
 
-            //Store Token
-            await localStorage.SetItemAsync("accessToken", response.Token);
+                //change app state
+                await ((ApiAuthenticationStateProvider)authenticationStateProvider).LoggedIn();
 
-            //Change auth state of app
-            await ((ApiAuthenticationStateProvider)authenticationStateProvider).LoggedIn();
+            }
+            catch (ApiException ex)
+            {
+                response = ConvertApiExceptions<AuthResponse>(ex);
+            }
 
-            return true;
+            return response;
         }
         public async Task Logout()
         {
