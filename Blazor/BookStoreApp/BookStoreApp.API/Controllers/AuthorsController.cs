@@ -12,6 +12,7 @@ using AutoMapper;
 using BookStoreApp.API.Static;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper.QueryableExtensions;
+using BookStoreApp.API.Repositories;
 
 namespace BookStoreApp.API.Controllers
 {
@@ -20,13 +21,13 @@ namespace BookStoreApp.API.Controllers
     [Authorize]
     public class AuthorsController : ControllerBase
     {
-        private readonly BookStoreDbContext context;
+        private readonly IAuthorsRepository authorsRepository;
         private readonly IMapper mapper;
         private readonly ILogger<AuthorsController> logger;
 
-        public AuthorsController(BookStoreDbContext context, IMapper mapper, ILogger<AuthorsController> logger)
+        public AuthorsController(IAuthorsRepository authorsRepository, IMapper mapper, ILogger<AuthorsController> logger)
         {
-            this.context = context;
+            this.authorsRepository = authorsRepository;
             this.mapper = mapper;
             this.logger = logger;
         }
@@ -37,7 +38,7 @@ namespace BookStoreApp.API.Controllers
         {
             try 
             { 
-                var authors = await context.Authors.ToListAsync();
+                var authors = await authorsRepository.GetAllAsync();
                 var authorDtos = mapper.Map<IEnumerable<AuthorReadOnlyDto>> (authors);
                 return Ok(authorDtos);
             } 
@@ -54,10 +55,7 @@ namespace BookStoreApp.API.Controllers
         {
             try
             {
-                var author = await context.Authors
-                    .Include(q => q.Books)
-                    .ProjectTo<AuthorDetailsDto>(mapper.ConfigurationProvider)
-                    .FirstOrDefaultAsync(q => q.Id == id);
+                var author = await authorsRepository.GetAuthorDetailsAsync(id);
 
                 if (author == null)
                 {
@@ -82,23 +80,24 @@ namespace BookStoreApp.API.Controllers
         {
             if (id != authorDto.Id)
             {
+                logger.LogWarning($"Update ID invalid in {nameof(PutAuthor)} - ID: {id}");
                 return BadRequest();
             }
 
-            var author = await context.Authors.FindAsync(id);
+            var author = await authorsRepository.GetAsync(id);
 
             if(author == null) { 
+                logger.LogWarning($"{nameof(Author)} record not found in {nameof(PutAuthor)} - ID: {id}");
                 return NotFound();
             }
 
             mapper.Map(authorDto, author);
-            context.Entry(author).State = EntityState.Modified;
 
             try
             {
-                await context.SaveChangesAsync();
+                await authorsRepository.UpdateAsync(author);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
                 if (!await AuthorExists(id))
                 {
@@ -106,7 +105,8 @@ namespace BookStoreApp.API.Controllers
                 }
                 else
                 {
-                    throw;
+                    logger.LogError(ex, $"Error performing GET in {nameof(PutAuthor)}");
+                    return StatusCode(500, Messages.Error500Message);
                 }
             }
 
@@ -119,11 +119,18 @@ namespace BookStoreApp.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AuthorCreateDto>> PostAuthor(AuthorCreateDto authorDto)
         {
-            var author = mapper.Map<Author>(authorDto);
-            await context.Authors.AddAsync(author);
-            await context.SaveChangesAsync();
+            try 
+            { 
+                var author = mapper.Map<Author>(authorDto);
+                await authorsRepository.AddAsync(author);
 
-            return CreatedAtAction(nameof(GetAuthor), new { id = author.Id }, author);
+                return CreatedAtAction(nameof(GetAuthor), new { id = author.Id }, author);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Error performing POST in {nameof(PostAuthor)}", authorDto);
+                return StatusCode(500, Messages.Error500Message);
+            }
         }
 
         // DELETE: api/Authors/5
@@ -131,21 +138,29 @@ namespace BookStoreApp.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
-            var author = await context.Authors.FindAsync(id);
-            if (author == null)
-            {
-                return NotFound();
+            try
+            { 
+                var author = await authorsRepository.GetAsync(id);
+                if (author == null)
+                {
+                    logger.LogWarning($"{nameof(Author)} record not found in {nameof(DeleteAuthor)} - ID: {id}");
+                    return NotFound();
+                }
+
+                await authorsRepository.DeleteAsync(id);
+
+                return NoContent();
             }
-
-            context.Authors.Remove(author);
-            await context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Error performing DELETE in {nameof(DeleteAuthor)}");
+                return StatusCode(500, Messages.Error500Message);
+            }
         }
 
         private async Task<bool> AuthorExists(int id)
         {
-            return await context.Authors.AnyAsync(e => e.Id == id);
+            return await authorsRepository.Exists(id);
         }
     }
 }
